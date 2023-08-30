@@ -1,0 +1,126 @@
+{% load static %}
+{% block header %}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.0.0-beta.3/css/bootstrap.css">
+<link rel="stylesheet" href="{% static 'chat.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-4 py-3 px-0 shadow">
+   <table>
+    {% for user in users %}
+    <tr>
+     <td>
+      <div class="box">
+       <img src="https://picsum.photos/50/50/?random=3">
+       <div>
+        <p>{{user.username}}</p>
+        <p>Lorem ipsum dolor sit ...</p>
+       </div>
+      </div>
+     </td>
+    </tr>
+    {% endfor %}
+   </table>
+  </div>
+  <div class="col-6 px-0 shadow">
+   <table>
+    <tr>
+     <td>
+      <div class="name text-dark">
+       <h6 class="mb-0"><span>{{request.user}}</span><i class="fas fa-volume-down"></i></h6>
+       <div class="ic">
+        <i class="fa fa-search"></i>
+        <i class="fas fa-phone-alt"></i>
+        <i class="fas fa-bars"></i>
+       </div>
+      </div>
+     </td>
+    </tr>
+    <tr>
+     <td>
+      <div class="chat">
+       <div class="self">
+	   <div class="chat__item__container" id="id_chat_item_container">
+        <div class="dialog">Lorem ipsum dolor, sit amet consectetur adipisicing elit. Error, dolore?</div>
+        <p>12:34</p>
+        <span class="read">read</span>
+     </div>
+       </div>
+      </div>
+     </td>
+    </tr>
+    <tr>
+     <td>
+      <div class="msg">
+       <input type="text" id="id_message_send_input" placeholder="you can type something right here, try it!" class="form-control" onchange="tt(this.value)">
+      </div>
+       <div class="ic">
+		   <button type="submit" id="id_message_send_button">Send</button>
+        <i class="fas fa-plus"></i>
+        <i class="fas fa-camera"></i>
+        <i class="far fa-image"></i>
+        <span class="float-end"><i class="far fa-smile"></i></span>
+       </div>
+     </td>
+    </tr>
+   </table>
+  </div>
+ </div>
+ <script src="table.js"></script>
+
+{% endblock %}
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script>
+const chatSocket = new WebSocket("ws://" + window.location.host + "/");
+chatSocket.onopen = function (e) {
+    console.log("The connection was set up successfully!");
+};
+chatSocket.onclose = function (e) {
+    console.log("Something unexpected happened!");
+};
+
+document.querySelector("#id_message_send_input").focus();
+document.querySelector("#id_message_send_input").onkeyup = function (e) {
+    if (e.key === "Enter") {
+        document.querySelector("#id_message_send_button").click();
+    }
+};
+
+document.querySelector("#id_message_send_button").onclick = function (e) {
+    const messageInput = document.querySelector("#id_message_send_input").value;
+    chatSocket.send(JSON.stringify({ message: messageInput, username: "{{request.user.username}}" }));
+};
+
+chatSocket.onmessage = function (e) {
+    const data = JSON.parse(e.data);
+
+    const chatItemContainer = document.querySelector("#id_chat_item_container");
+    const chatItem = document.createElement("div");
+    chatItem.classList.add("chat__item__container");
+
+    const dialog = document.createElement("div");
+    dialog.classList.add("dialog");
+    dialog.textContent = data.message;
+
+    const timestamp = document.createElement("p");
+    timestamp.textContent = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+    const readStatus = document.createElement("span");
+    readStatus.classList.add("read");
+    readStatus.textContent = "read";
+
+    chatItem.appendChild(dialog);
+    chatItem.appendChild(timestamp);
+    chatItem.appendChild(readStatus);
+
+    chatItemContainer.appendChild(chatItem);
+
+    // Scroll to the bottom of the chat container to show the latest message
+    chatItemContainer.scrollTop = chatItemContainer.scrollHeight;
+};
+</script>
+{% endblock %}
